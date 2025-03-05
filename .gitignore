@@ -169,3 +169,6 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+/data_raw.csv
+/data_processed.csv
+/by_region.png
