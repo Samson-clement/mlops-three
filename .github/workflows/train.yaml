@@ -25,6 +25,7 @@ jobs:
           REPO_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
           # Run the DVC pipeline
+          pip install dvc
           dvc repro
           
           # Get metrics diff
