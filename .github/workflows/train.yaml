@@ -2,21 +2,45 @@ name: farmers
 on: [push]
 jobs:
   run:
-    runs-on: [ubuntu-latest]
-    container: docker://dvcorg/cml-py3:latest
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: cml_run
-        env:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.8'
+      
+      - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          dvc repro 
-
-          git fetch --prune
-          dvc metrics diff --show-md master > report.md
-
+      
+      - name: Setup CML
+        uses: iterative/setup-cml@v1
+      
+      - name: Run DVC pipeline and generate report
+        env:
+          REPO_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          # Run the DVC pipeline
+          pip install dvc
+          dvc repro
+          
+          # Get metrics diff with correct flag
+          echo "## Model Metrics" > report.md
+          echo "" >> report.md
+          
+          # Ensure we have the main branch info
+          git fetch origin main
+          
+          # Get metrics diff with the correct --md flag (not --show-md)
+          dvc metrics diff main --md >> report.md
+          
           # Add figure to the report
-          echo "## Validating results by region"
-          cml-publish by_region.png --md >> report.md
-          cml-send-comment report.md
+          echo -e "\n## Validating results by region" >> report.md
+          echo "![](./by_region.png)" >> report.md
+          
+          # Create comment using CML
+          cml comment create report.md
