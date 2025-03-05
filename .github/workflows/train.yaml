@@ -32,7 +32,7 @@ jobs:
           
           # Create report with metrics
           git fetch --prune
-          dvc metrics diff master > metrics_diff.txt || echo "No metrics diff available" > metrics_diff.txt
+          dvc metrics diff main > metrics_diff.txt || echo "No metrics diff available" > metrics_diff.txt
           
           echo "## Model Metrics" > report.md
           cat metrics_diff.txt >> report.md
