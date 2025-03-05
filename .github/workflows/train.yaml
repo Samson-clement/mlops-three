@@ -25,38 +25,17 @@ jobs:
           REPO_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
           # Run the DVC pipeline
-          pip install dvc
           dvc repro
           
-          # Get metrics diff
+          # Get metrics diff with correct flag
           echo "## Model Metrics" > report.md
           echo "" >> report.md
           
           # Ensure we have the main branch info
           git fetch origin main
           
-          # Debug: List available branches
-          echo "Available git branches:"
-          git branch -a
-          
-          # Debug: Check if metrics.json exists
-          if [ -f "metrics.json" ]; then
-            echo "metrics.json exists"
-          else
-            echo "metrics.json does not exist"
-          fi
-          
-          # Try to get metrics diff
-          echo "Attempting to get metrics diff vs main branch..."
-          dvc metrics diff main --show-md >> report.md || echo "Error running dvc metrics diff command"
-          
-          # If the report is empty at this point, show current metrics
-          if [ "$(wc -l < report.md)" -lt 3 ]; then
-            echo "Metrics diff failed, showing current metrics instead" >> report.md
-            echo '```' >> report.md
-            dvc metrics show >> report.md
-            echo '```' >> report.md
-          fi
+          # Get metrics diff with the correct --md flag (not --show-md)
+          dvc metrics diff main --md >> report.md
           
           # Add figure to the report
           echo -e "\n## Validating results by region" >> report.md
