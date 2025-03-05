@@ -1,10 +1,8 @@
 name: farmers
 on: [push]
-
 jobs:
   run:
     runs-on: ubuntu-latest
-    # Remove container to avoid glibc issues
     steps:
       - uses: actions/checkout@v4
         with:
@@ -18,28 +16,50 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install dvc
       
       - name: Setup CML
         uses: iterative/setup-cml@v1
       
       - name: Run DVC pipeline and generate report
         env:
-          REPO_TOKEN: ${{ secrets.PAT_TOKEN }}  # Use your PAT instead of GITHUB_TOKEN
+          REPO_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
           # Run the DVC pipeline
           dvc repro
           
-          # Create report with metrics
-          git fetch --prune
-          dvc metrics diff main > metrics_diff.txt || echo "No metrics diff available" > metrics_diff.txt
-          
+          # Get metrics diff
           echo "## Model Metrics" > report.md
-          cat metrics_diff.txt >> report.md
+          echo "" >> report.md
+          
+          # Ensure we have the main branch info
+          git fetch origin main
+          
+          # Debug: List available branches
+          echo "Available git branches:"
+          git branch -a
+          
+          # Debug: Check if metrics.json exists
+          if [ -f "metrics.json" ]; then
+            echo "metrics.json exists"
+          else
+            echo "metrics.json does not exist"
+          fi
+          
+          # Try to get metrics diff
+          echo "Attempting to get metrics diff vs main branch..."
+          dvc metrics diff main --show-md >> report.md || echo "Error running dvc metrics diff command"
+          
+          # If the report is empty at this point, show current metrics
+          if [ "$(wc -l < report.md)" -lt 3 ]; then
+            echo "Metrics diff failed, showing current metrics instead" >> report.md
+            echo '```' >> report.md
+            dvc metrics show >> report.md
+            echo '```' >> report.md
+          fi
           
           # Add figure to the report
           echo -e "\n## Validating results by region" >> report.md
           echo "![](./by_region.png)" >> report.md
           
-          # Use updated CML command to create comment
+          # Create comment using CML
           cml comment create report.md
