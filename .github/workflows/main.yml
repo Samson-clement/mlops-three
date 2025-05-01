@@ -1,0 +1,32 @@
+name: Test JDK Download
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  download-jdk:
+    runs-on: windows-latest # Use a Windows runner to match the Azure DevOps agent
+
+    steps:
+    # Checkout the repository (optional for this test, but good practice)
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # Download the JDK file using PowerShell
+    - name: Download JDK 11.0.9
+      shell: pwsh # Use PowerShell on Windows
+      run: |
+        # Create a directory for the JDK file
+        New-Item -ItemType Directory -Path "$env:GITHUB_WORKSPACE/jdk" -Force
+        # Download the JDK file from Eclipse Temurin
+        Invoke-WebRequest -Uri "https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.9%2B11/OpenJDK11U-jdk_x64_windows_hotspot_11.0.9_11.zip" -OutFile "$env:GITHUB_WORKSPACE/jdk/jdk-11.0.9_windows-x64_bin.zip"
+
+    # Verify the file was downloaded
+    - name: Verify JDK File
+      shell: pwsh
+      run: |
+        # List the file to confirm it exists
+        Get-ChildItem -Path "$env:GITHUB_WORKSPACE/jdk"
